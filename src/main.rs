@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tracing_subscriber::{
     prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt, Registry,
 };
-use url_shortner::{app, build_pool, AppState, Config};
+use url_shortener::{app, build_pool, AppState, Config};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -13,7 +13,7 @@ async fn main() -> anyhow::Result<()> {
     Registry::default()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-                "url-shortner=debug,tower_http=debug,axum::rejection=trace".into()
+                "url_shortener=debug,tower_http=debug,axum::rejection=trace".into()
             }),
         )
         .with(tracing_subscriber::fmt::layer())

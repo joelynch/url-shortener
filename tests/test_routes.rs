@@ -4,7 +4,7 @@ use axum::{body::Body, http, Router};
 use serde_json::{json, Value};
 use sqlx::PgPool;
 use tower::ServiceExt;
-use url_shortner::{app, AppState, Config};
+use url_shortener::{app, AppState, Config};
 
 fn test_app(pool: PgPool) -> anyhow::Result<Router> {
     let config = envy::from_env::<Config>()?;

@@ -1531,7 +1531,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "url-shortner"
+name = "url-shortener"
 version = "0.1.0"
 dependencies = [
  "anyhow",

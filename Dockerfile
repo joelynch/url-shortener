@@ -3,5 +3,5 @@ COPY . .
 RUN cargo build
 
 FROM debian:buster-slim
-COPY --from=builder ./target/debug/url-shortner ./target/release/url-shortner
-CMD ["/target/release/url-shortner", "--port", "3000"]
+COPY --from=builder ./target/debug/url-shortener ./target/release/url-shortener
+CMD ["/target/release/url-shortener", "--port", "3000"]

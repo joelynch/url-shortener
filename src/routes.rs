@@ -44,9 +44,9 @@ pub async fn post_shorten(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
     print!("{:?}", existing);
-    let mut shortner = Shortener::new(state.strategy, url.url.clone());
+    let mut shortener = Shortener::new(state.strategy, url.url.clone());
     loop {
-        let code = shortner.next_shortened();
+        let code = shortener.next_shortened();
         let short_url = format!("{}/s/{}", state.host, code);
         match insert_url(&state.pool, &url.url, &code, &short_url).await {
             Ok(url) => {
