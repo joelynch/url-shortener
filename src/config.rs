@@ -26,7 +26,7 @@ impl Config {
 }
 
 fn default_host() -> String {
-    "https://tier.app".into()
+    "http://localhost:3000".into()
 }
 
 fn default_digest() -> String {

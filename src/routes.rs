@@ -35,15 +35,6 @@ pub async fn post_shorten(
     if !valid_url(&url.url) {
         return Err(StatusCode::BAD_REQUEST);
     }
-    let existing = query_as::<_, Url>("SELECT * FROM urls")
-        .bind(&url.url)
-        .fetch_all(&state.pool)
-        .await
-        .map_err(|err| {
-            error!("Database error: {:?}", err);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-    print!("{:?}", existing);
     let mut shortener = Shortener::new(state.strategy, url.url.clone());
     loop {
         let code = shortener.next_shortened();
@@ -96,7 +87,7 @@ pub async fn get_url(
     State(state): State<Arc<AppState>>,
 ) -> Result<Redirect, StatusCode> {
     let url: Url = query_as("SELECT * FROM urls WHERE code = $1")
-        .bind(code)
+        .bind(&code)
         .fetch_one(&state.pool)
         .await
         .map_err(sqlx_err_to_status_code)?;

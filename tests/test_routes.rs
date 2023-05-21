@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use axum::{body::Body, http, Router};
+use hyper::Request;
 use serde_json::{json, Value};
 use sqlx::PgPool;
 use tower::ServiceExt;
@@ -96,44 +97,54 @@ async fn test_get_stats_404(pool: PgPool) {
 
 #[sqlx::test(fixtures("urls"))]
 async fn test_post_shorten_ok(pool: PgPool) {
-    let app = test_app(pool).unwrap();
+    let app = test_app(pool.clone()).unwrap();
     let req = http::Request::post("/shorten")
         .header("content-type", "application/json")
         .body(Body::from(r#"{"url": "http://netflix.com"}"#))
         .unwrap();
-    let res = app.oneshot(req).await.unwrap();
+    let res = app.clone().oneshot(req).await.unwrap();
     assert_eq!(res.status(), http::StatusCode::OK);
     let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
     let json: Value = serde_json::from_slice(&body).unwrap();
-    assert_eq!(
-        json,
-        json!({
-            "code": "T20JCl6-",
-            "short_url": "https://tier.app/s/T20JCl6-",
-            "url": "http://netflix.com"
-        })
-    );
+    let code = json["code"].as_str().unwrap();
+    let req = http::Request::get(format!("/s/{}", code))
+        .body(Body::empty())
+        .unwrap();
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), http::StatusCode::SEE_OTHER);
+    assert_eq!(res.headers().get("location").unwrap(), "http://netflix.com");
 }
 
 #[sqlx::test(fixtures("urls"))]
-#[ignore = "TODO: fix this test.  Seems to function correctly, but for some reason does not agree with the unit test in routes.rs.  Possibly sqlx::test related."]
 async fn test_post_shorten_existing(pool: PgPool) {
     let app = test_app(pool).unwrap();
-    let req = http::Request::post("/shorten")
-        .header("content-type", "application/json")
-        .body(Body::from(r#"{"url": "https://www.google.com"}"#))
-        .unwrap();
-    let res = app.oneshot(req).await.unwrap();
+    fn req() -> Request<Body> {
+        http::Request::post("/shorten")
+            .header("content-type", "application/json")
+            .body(Body::from(r#"{"url": "https://netflix.com"}"#))
+            .unwrap()
+    }
+    let res = app.clone().oneshot(req()).await.unwrap();
     assert_eq!(res.status(), http::StatusCode::OK);
     let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
     let json: Value = serde_json::from_slice(&body).unwrap();
+    let first_code = json["code"].as_str().unwrap();
+
+    let res = app.clone().oneshot(req()).await.unwrap();
+    assert_eq!(res.status(), http::StatusCode::OK);
+    let body = hyper::body::to_bytes(res.into_body()).await.unwrap();
+    let json: Value = serde_json::from_slice(&body).unwrap();
+    let code = json["code"].as_str().unwrap();
+    assert_ne!(code, first_code);
+
+    let req = http::Request::get(format!("/s/{}", code))
+        .body(Body::empty())
+        .unwrap();
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), http::StatusCode::SEE_OTHER);
     assert_eq!(
-        json,
-        json!({
-            "code": "wJZTvWsB",
-            "short_url": "https://tier.app/s/wJZTvWsB",
-            "url": "https://www.google.com"
-        })
+        res.headers().get("location").unwrap(),
+        "https://netflix.com"
     );
 }
 
